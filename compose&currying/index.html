@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>函数合成与函数柯里化</title>
+</head>
+<body>
+  
+</body>
+<script>
+
+  // 合成 compose
+  // 如果一个值需要经过多个函数操作，才能得到一个最终的值，那么可以将多个函数操作，合并成一个函数，这叫做"函数的合成"
+  // 合成的好处，让代码变得简单而富有可读性，同时通过不同的组合方式，我们可以轻易组合出其他常用函数，让我们的代码更具有表现力。
+  
+  function fn1(arg) {
+    console.log("fn1", arg);
+    return arg; // 
+  }
+
+  function fn2(arg) {
+    console.log("fn2", arg);
+    return arg; // 
+  }
+
+  function fn3(arg) {
+    console.log("fn3", arg);
+    return arg; // 
+  }
+
+  function compose(...funcs) { // 接收多个函数, 返回一个新函数 接收共同参数
+
+    // https://www.runoob.com/jsref/jsref-reduce.html
+
+    const res = funcs.reduce((total, currentValue) => { // reduce接收一个函数，并对funcs中的所有值依次调用该函数。该函数前两个参数为，计算之后的值，和当前数组执行的值
+      console.log("total", total);
+      console.log("currentValue", currentValue);
+      return function next(...args) { // 第一次的total 是fn1，下一次是next这个返回函数，值就是调用next后的nextValue，直至funcs循环完，最后再返回next函数给res，给外部调用，其中的值已经存储完成
+        console.log("next args", args)
+        const nextValue = total(args) + currentValue(args);
+        return nextValue;
+      }
+    })
+
+    console.log("compose reduce", res); // 这里返回的是 next函数，用于接收参数，并且next中是保存了reduce中的执行结果的。
+    return res;
+
+  }
+
+  // 执行顺序，1.进入compose后 先执行reduce循环，2. 但是由于里面返回的是一个函数，当前函数并没有调用，所以会等待真正执行的时刻，
+  const nextCompose = compose(fn1, fn2, fn3);
+  const nextComposeRes = nextCompose("compose累加"); // 3. 传入参数并调用时（执行时刻）。
+  console.log("nextComposeRes", nextComposeRes); // 最终组合结果
+
+  // 箭头函数版
+  function composeArrow(...funcs) {
+    if (funcs.length === 0) return arg => arg; // 没有函数组合时，直接返回一个新函数，返回值是接收的参数
+    if (funcs.length === 1) return funcs[0]; // 当只有一个函数传入时，直接返回该函数，不需要组合。
+    return funcs.reduce((t, c) => (...args) => t(args) + c(args));
+  }
+
+  console.log("composeArrow", composeArrow(fn1, fn2, fn3)("arrow->"));
+
+
+  console.log("分割线-------------");
+
+  // 柯里化 currying
+  // 柯里化就是将接收多个参数的函数变换为接收一个参数的函数，并且返回一个新函数继续接收新参数，最终返回一个新结果（多参数组成的结果）。
+  // 简单的说，将一个多参数函数转换为单参数函数，即可称为柯里化。好处是能将函数的颗粒度变得更细，更容易组合，不受限于每次都要传递多个参数，比如多个参数的函数进行合成就非常麻烦，所以这个时候需要进行柯里化转换为单一参数函数，然后就可以合成了。
+  // 中间件的核心原理就是使用柯里化，接收单个参数返回新函数（结果）用于下一个中间件继续调用执行。
+  
+  // 柯里化之前
+  function add(x, y) { // 接收两个参数
+    return x + y;
+  }
+
+  const add1 = add(1, 2); // 需要传递两个参数，且如果需要更多参数相加需要复杂调用 add(1, 2) + add(5, 8) 十分麻烦。
+
+  console.log("add1", add1);
+
+  // 柯里化之后
+  function addC(x) { // 接收一个参数 返回一个新函数，通过闭包保存第一次调用时传入的参数，然后与第二次调用时的数据相加，最后返回一个结果，如果多次调用。composeArrow(addC(1), add(5))(10), composeArrow需要修改第二个共同参数接收形式,...args 是一个数组，相加之后是一个字符串
+    return y => x + y;
+  }
+
+  console.log("addC", addC(1)(5))
+
+
+</script>
+</html>
